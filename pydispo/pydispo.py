@@ -165,7 +165,43 @@ def check_single_email(email_addr,inboxmail_id = 0, bodyasHTML = False, getAttac
             getAttachedFile(http_get_url_single, filename,savedir='./')
     return ;
     #FUTURE: All to HTML, not just body. Link Attachments to HTML. Store attachments in workdir
+
+def getDataArray(email_addr):
     
+    login_id = email_addr[:email_addr.find('@')]
+    login_domain = email_addr[email_addr.find('@')+1:]
+    http_get_url_single =   "https://www.1secmail.com/api/v1/?action=getMessages&login="+login_id+"&domain="+login_domain
+    response = requests.get(http_get_url_single)
+    
+    if not response.status_code == 200:
+        return {
+                'error':'Invalid server response code',
+                'code' : response.status_code
+            };
+    
+    if response.content.decode("utf-8") == 'Message not found':
+        return {
+                'error':'No message found ',
+                'code' : response.status_code
+            };
+    
+    response = response.json() 
+
+    return response
+
+def getSingleMailBody(email_addr,inboxmail_id):
+    login_id = email_addr[:email_addr.find('@')]
+    login_domain = email_addr[email_addr.find('@')+1:]
+    http_get_url_single =   "https://www.1secmail.com/api/v1/?action=readMessage&login="+login_id+"&domain="+login_domain+"&id="+str(inboxmail_id)
+    response = requests.get(http_get_url_single)
+    jsonResponse = response.json()
+
+    if response.status_code == 200 and 'textBody' in jsonResponse.keys():
+        return jsonResponse['textBody']
+    else:
+        return ''
+
+
 def getAttachedFile(http_get_url_single, filename,savedir='./'):
     http_get_url_attached = http_get_url_single.replace("action=readMessage","action=download")+"&file="+filename
     print("Getting attached file:", filename)
